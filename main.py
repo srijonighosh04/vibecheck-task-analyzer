@@ -1,10 +1,13 @@
 import os
 import json
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+
+# -------------------- ENV SETUP --------------------
 
 # Load environment variables from .env
 load_dotenv()
@@ -13,12 +16,24 @@ load_dotenv()
 # Make sure GEMINI_API_KEY exists in .env
 client = genai.Client()
 
-# Gemini model (confirmed working)
+# Gemini model
 MODEL_ID = "gemini-3-flash-preview"
+
+# -------------------- APP INIT --------------------
 
 app = FastAPI(title="VibeCheck Task Analyzer")
 
-# --------- Request & Response Schemas ---------
+# -------------------- CORS (MUST BE HERE) --------------------
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],  # React + Vite
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# -------------------- SCHEMAS --------------------
 
 class AnalyzeRequest(BaseModel):
     text: str
@@ -28,7 +43,7 @@ class AnalyzeResponse(BaseModel):
     tone: str
     urgency: int
 
-# --------- Routes ---------
+# -------------------- ROUTES --------------------
 
 @app.get("/")
 def root():
@@ -91,7 +106,7 @@ Text:
         print("Gemini API error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-# --------- Local run ---------
+# -------------------- LOCAL RUN --------------------
 
 if __name__ == "__main__":
     import uvicorn
